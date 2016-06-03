@@ -1,0 +1,25 @@
+# ignore file to help keep class files and other binary
+# file out of the repo
+
+*.class
+*.war
+*.bak
+*.old
+*.log
+.settings/
+target/
+target-eclipse/
+.gradle/
+plugin.xml
+*.zip
+/web-app/plugins
+/web-app/WEB-INF
+cobertura.ser
+.idea/
+*.iml
+.settings
+.project
+.classpath
+.slcache/
+*.ipr
+*.iws
