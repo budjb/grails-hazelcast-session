@@ -20,7 +20,7 @@ class HazelcastSessionGrailsPlugin {
     /**
      * Plugin version.
      */
-    def version = "0.1.1"
+    def version = "0.1.2"
 
     /**
      * Version of Grails the plugin is meant for.
@@ -157,7 +157,6 @@ class HazelcastSessionGrailsPlugin {
         }
 
         hazelcastSessionInstance(Hazelcast) { beanDefinition ->
-
             beanDefinition.constructorArgs = [config]
             beanDefinition.factoryMethod = 'newHazelcastInstance'
             beanDefinition.singleton = true
