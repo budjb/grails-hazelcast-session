@@ -14,7 +14,7 @@ class HazelcastSessionGrailsPlugin {
     /**
      * Plugin version.
      */
-    def version = "0.1.3"
+    def version = "0.1.4"
 
     /**
      * Version of Grails the plugin is meant for.

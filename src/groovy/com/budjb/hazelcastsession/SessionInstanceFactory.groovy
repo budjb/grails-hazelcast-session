@@ -3,9 +3,11 @@ package com.budjb.hazelcastsession
 import com.hazelcast.config.Config
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
+import groovy.util.logging.Slf4j
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.springframework.beans.factory.config.AbstractFactoryBean
 
+@Slf4j
 class SessionInstanceFactory extends AbstractFactoryBean<HazelcastInstance> {
     /**
      * Hazelcast instance name.
@@ -94,6 +96,8 @@ class SessionInstanceFactory extends AbstractFactoryBean<HazelcastInstance> {
         if (getConfigurationValue(String, conf.group.password)) {
             config.groupConfig.password = getConfigurationValue(String, conf.group.password)
         }
+
+        log.debug("Hazelcast Session Configuration: ${config.toString()}")
 
         return config
     }
