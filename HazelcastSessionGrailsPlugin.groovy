@@ -1,8 +1,7 @@
-import com.hazelcast.config.Config
+import com.budjb.hazelcastsession.SessionInstanceFactory
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.web.SessionListener
 import com.hazelcast.web.spring.SpringAwareWebFilter
-import grails.util.Metadata
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -13,14 +12,9 @@ import org.springframework.security.core.session.SessionRegistryImpl
  */
 class HazelcastSessionGrailsPlugin {
     /**
-     * Name of the hazelcast instance required for the session cluster.
-     */
-    static final String HAZELCAST_INSTANCE_NAME = 'hazelcastSessionInstance'
-
-    /**
      * Plugin version.
      */
-    def version = "0.1.2"
+    def version = "0.1.3"
 
     /**
      * Version of Grails the plugin is meant for.
@@ -88,28 +82,32 @@ class HazelcastSessionGrailsPlugin {
                 'filter-name'('hazelcast-session-filter')
                 'filter-class'(SpringAwareWebFilter.class.getName())
                 'init-param' {
-                    'param-name'('session-ttl-seconds')
-                    'param-value'(getSessionTTL(application).toString())
+                    'param-name'('instance-name')
+                    'param-value'(SessionInstanceFactory.HAZELCAST_INSTANCE_NAME)
                 }
-                'init-param' {
-                    'param-name'('sticky-session')
-                    'param-value'(isSessionSticky(application).toString())
+                if (getSessionTTL(application) != null) {
+                    'init-param' {
+                        'param-name'('session-ttl-seconds')
+                        'param-value'(getSessionTTL(application).toString())
+                    }
                 }
-                if (getCookieName(application)) {
+                if (isSessionSticky(application) != null) {
+                    'init-param' {
+                        'param-name'('sticky-session')
+                        'param-value'(isSessionSticky(application).toString())
+                    }
+                }
+                if (getCookieName(application) != null) {
                     'init-param' {
                         'param-name'('cookie-name')
                         'param-value'(getCookieName(application))
                     }
                 }
-                if (getCookieDomain(application)) {
+                if (getCookieDomain(application) != null) {
                     'init-param' {
                         'param-name'('cookie-domain')
                         'param-value'(getCookieDomain(application))
                     }
-                }
-                'init-param' {
-                    'param-name'('instance-name')
-                    'param-value'(HAZELCAST_INSTANCE_NAME)
                 }
             }
 
@@ -128,7 +126,7 @@ class HazelcastSessionGrailsPlugin {
     }
 
     /**
-     * Registers a session registry.
+     * Register managed Spring beans.
      */
     def doWithSpring = {
         if (!isPluginEnabled(application)) {
@@ -137,29 +135,10 @@ class HazelcastSessionGrailsPlugin {
 
         'sessionRegistry'(SessionRegistryImpl)
 
-        String multicastGroup = getInstanceMulticastGroup(application)
-        Integer multicastPort = getInstanceMulticastPort(application)
-        String groupName = getInstanceGroupName(application)
-        String groupPassword = getInstanceGroupPassword(application)
-        Config config = new Config()
-        config.setInstanceName(HAZELCAST_INSTANCE_NAME)
-        config.networkConfig.portAutoIncrement = true
-        config.networkConfig.join.multicastConfig.enabled = true
-        if (multicastGroup) {
-            config.networkConfig.join.multicastConfig.multicastGroup = multicastGroup
-        }
-        if (multicastPort) {
-            config.networkConfig.join.multicastConfig.multicastPort = multicastPort
-        }
-        config.groupConfig.name = groupName
-        if (groupPassword) {
-            config.groupConfig.password = groupPassword
-        }
-
-        hazelcastSessionInstance(Hazelcast) { beanDefinition ->
-            beanDefinition.constructorArgs = [config]
-            beanDefinition.factoryMethod = 'newHazelcastInstance'
-            beanDefinition.singleton = true
+        if (isInstanceEnabled(application)) {
+            'hazelcastSessionCache'(SessionInstanceFactory) {
+                grailsApplication = ref('grailsApplication')
+            }
         }
     }
 
@@ -167,7 +146,7 @@ class HazelcastSessionGrailsPlugin {
      * Do a sanity check to ensure that the required hazelcast instance exists.
      */
     def doWithApplicationContext = { applicationContext ->
-        if (isPluginEnabled(application) && !Hazelcast.getHazelcastInstanceByName(HAZELCAST_INSTANCE_NAME)) {
+        if (isPluginEnabled(application) && !Hazelcast.getHazelcastInstanceByName(SessionInstanceFactory.HAZELCAST_INSTANCE_NAME)) {
             throw new IllegalStateException("no Hazelcast instance with name 'hazelcastSessionInstance' found")
         }
     }
@@ -187,7 +166,7 @@ class HazelcastSessionGrailsPlugin {
      * @return
      */
     boolean isPluginEnabled(GrailsApplication application) {
-        return getConfigurationValue(Boolean, getPluginConfiguration(application), true)
+        return getConfigurationValue(Boolean, getPluginConfiguration(application).enabled, true)
     }
 
     /**
@@ -195,8 +174,8 @@ class HazelcastSessionGrailsPlugin {
      *
      * @return
      */
-    int getSessionTTL(GrailsApplication application) {
-        return getConfigurationValue(Integer, getPluginConfiguration(application).ttl, 1800)
+    Integer getSessionTTL(GrailsApplication application) {
+        return getConfigurationValue(Integer, getPluginConfiguration(application).ttl)
     }
 
     /**
@@ -204,8 +183,8 @@ class HazelcastSessionGrailsPlugin {
      *
      * @return
      */
-    boolean isSessionSticky(GrailsApplication application) {
-        return getConfigurationValue(Boolean, getPluginConfiguration(application).sticky, true)
+    Boolean isSessionSticky(GrailsApplication application) {
+        return getConfigurationValue(Boolean, getPluginConfiguration(application).sticky)
     }
 
     /**
@@ -227,41 +206,6 @@ class HazelcastSessionGrailsPlugin {
     }
 
     /**
-     * Returns the plugin's hazelcast instance config.
-     */
-    Map getPluginInstanceConfig(GrailsApplication application) {
-        return getPluginConfiguration(application).instance
-    }
-
-    /**
-     * Returns the instance multicast group.
-     */
-    String getInstanceMulticastGroup(GrailsApplication application) {
-        return getConfigurationValue(String, getPluginInstanceConfig(application).multicast.group)
-    }
-
-    /**
-     * Returns the instance multicast port
-     */
-    private Integer getInstanceMulticastPort(GrailsApplication application) {
-        return getConfigurationValue(Integer, getPluginInstanceConfig(application).multicast.port)
-    }
-
-    /**
-     * Returns the instance group name.
-     */
-    String getInstanceGroupName(GrailsApplication application) {
-        return getConfigurationValue(String, getPluginInstanceConfig(application).group.name, application.metadata.get(Metadata.APPLICATION_NAME) + "-sessions")
-    }
-
-    /**
-     * Returns the instance group password.
-     */
-    String getInstanceGroupPassword(GrailsApplication application) {
-        return getConfigurationValue(String, getPluginInstanceConfig(application).group.password)
-    }
-
-    /**
      * Returns the given configuration value if it is the proper class type. If it is not,
      * the fallback parameter is returned.
      *
@@ -270,10 +214,17 @@ class HazelcastSessionGrailsPlugin {
      * @param fallback
      * @return
      */
-    protected <T> T getConfigurationValue(Class<T> type, def value, T fallback = null) {
+    public <T> T getConfigurationValue(Class<T> type, def value, T fallback = null) {
         if (type.isInstance(value)) {
             return value as T
         }
         return fallback
+    }
+
+    /**
+     * Returns whether a hazelcast instance should be created by the plugin.
+     */
+    boolean isInstanceEnabled(GrailsApplication application) {
+        return getConfigurationValue(Boolean, getPluginConfiguration(application).instance.enabled, true)
     }
 }
