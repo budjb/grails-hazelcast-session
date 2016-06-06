@@ -14,12 +14,17 @@ class HazelcastSessionGrailsPlugin {
     /**
      * Plugin version.
      */
-    def version = "0.1.4"
+    def version = "0.1.5"
 
     /**
      * Version of Grails the plugin is meant for.
      */
     def grailsVersion = "2.0 > *"
+
+    /**
+     * Load order.
+     */
+    def loadAfter = ['spring-security-core', 'logging']
 
     /**
      * Plugin title.
