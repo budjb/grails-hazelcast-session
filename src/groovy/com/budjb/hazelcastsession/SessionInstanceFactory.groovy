@@ -69,6 +69,13 @@ class SessionInstanceFactory extends AbstractFactoryBean<HazelcastInstance> {
         config.networkConfig.port = getConfigurationValue(Integer, conf.port, config.networkConfig.port)
         config.networkConfig.portAutoIncrement = getConfigurationValue(Boolean, conf.portAutoIncrement, config.networkConfig.portAutoIncrement)
 
+        List<String> interfaces = getConfigurationValue(List, conf.interfaces, [])
+        if (interfaces) {
+            interfaces.each {
+                config.networkConfig.interfaces.addInterface(it)
+            }
+        }
+
         config.networkConfig.join.multicastConfig.enabled = getConfigurationValue(Boolean, conf.multicast.enabled, true)
         if (config.networkConfig.join.multicastConfig.enabled) {
             String multicastGroup = getConfigurationValue(String, conf.multicast.group)
