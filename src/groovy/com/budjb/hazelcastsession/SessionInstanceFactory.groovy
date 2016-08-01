@@ -71,6 +71,7 @@ class SessionInstanceFactory extends AbstractFactoryBean<HazelcastInstance> {
 
         List<String> interfaces = getConfigurationValue(List, conf.interfaces, [])
         if (interfaces) {
+            config.networkConfig.interfaces.enabled = true
             interfaces.each {
                 config.networkConfig.interfaces.addInterface(it)
             }
