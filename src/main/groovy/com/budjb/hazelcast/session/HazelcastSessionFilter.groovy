@@ -1,14 +1,16 @@
-package com.budjb.hazelcastsession
+package com.budjb.hazelcast.session
 
 import com.hazelcast.config.Config
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
-import groovy.util.logging.Slf4j
-import org.codehaus.groovy.grails.commons.GrailsApplication
-import org.springframework.beans.factory.config.AbstractFactoryBean
+import grails.core.GrailsApplication
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.web.filter.DelegatingFilterProxy
 
-@Slf4j
-class SessionInstanceFactory extends AbstractFactoryBean<HazelcastInstance> {
+import javax.servlet.ServletException
+
+class HazelcastSessionFilter extends DelegatingFilterProxy {
     /**
      * Hazelcast instance name.
      */
@@ -20,30 +22,33 @@ class SessionInstanceFactory extends AbstractFactoryBean<HazelcastInstance> {
     GrailsApplication grailsApplication
 
     /**
-     * Constructor.
+     * Logger.
      */
-    SessionInstanceFactory() {
-        setSingleton(true)
-    }
+    Logger log = LoggerFactory.getLogger(HazelcastSessionFilter)
 
     /**
-     * Returns the class type that this factory creates.
-     *
-     * @return
+     * Hazelcast instance.
      */
-    @Override
-    Class<?> getObjectType() {
-        return HazelcastInstance
-    }
+    HazelcastInstance hazelcastInstance
 
     /**
+     * Initializes the filter bean.
      *
-     * @return
-     * @throws Exception
+     * @throws ServletException
      */
     @Override
-    protected HazelcastInstance createInstance() throws Exception {
-        return Hazelcast.newHazelcastInstance(loadConfig())
+    protected void initFilterBean() throws ServletException {
+        if (isInstanceEnabled()) {
+            hazelcastInstance = Hazelcast.newHazelcastInstance(loadConfig())
+        }
+        else {
+            hazelcastInstance = Hazelcast.getHazelcastInstanceByName(HAZELCAST_INSTANCE_NAME)
+            if (!hazelcastInstance) {
+                throw new IllegalStateException("no Hazelcast instance with name '${HAZELCAST_INSTANCE_NAME}' was found")
+            }
+        }
+
+        super.initFilterBean()
     }
 
     /**
@@ -105,7 +110,7 @@ class SessionInstanceFactory extends AbstractFactoryBean<HazelcastInstance> {
             config.groupConfig.password = getConfigurationValue(String, conf.group.password)
         }
 
-        log.debug("Hazelcast Session Configuration: ${config.toString()}")
+        log.trace("Hazelcast Session Configuration: ${config.toString()}")
 
         return config
     }
@@ -133,5 +138,12 @@ class SessionInstanceFactory extends AbstractFactoryBean<HazelcastInstance> {
             return value as T
         }
         return fallback
+    }
+
+    /**
+     * Returns whether a hazelcast instance should be created by the plugin.
+     */
+    boolean isInstanceEnabled() {
+        return getConfigurationValue(Boolean, getConfig().enabled, true)
     }
 }
