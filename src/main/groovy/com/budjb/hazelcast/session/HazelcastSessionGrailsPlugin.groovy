@@ -1,9 +1,10 @@
 package com.budjb.hazelcast.session
 
-import com.hazelcast.core.Hazelcast
 import com.hazelcast.web.SessionListener
+import com.hazelcast.web.WebFilter
 import grails.plugins.Plugin
-import org.springframework.boot.context.embedded.DelegatingFilterProxyRegistrationBean
+import grails.util.Metadata
+import org.springframework.boot.context.embedded.FilterRegistrationBean
 import org.springframework.boot.context.embedded.ServletListenerRegistrationBean
 import org.springframework.security.core.session.SessionRegistryImpl
 
@@ -70,29 +71,13 @@ class HazelcastSessionGrailsPlugin extends Plugin {
                 listener = new SessionListener()
             }
 
-            Map initParams = getFilterInitParams()
-            delegateHazelcastSessionFilter(DelegatingFilterProxyRegistrationBean, 'hazelcastSessionFilter', []) {
+            hazelcastSessionFilterRegistrationBean(FilterRegistrationBean, new WebFilter(getFilterInitParams()), []) {
                 name = 'hazelcast-session-filter'
-                initParameters = initParams
                 urlPatterns = ['/*']
                 dispatcherTypes = EnumSet.of(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.REQUEST)
             }
 
-            hazelcastSessionFilter(HazelcastSessionFilter) {
-                delegate.grailsApplication = grailsApplication
-
-            }
-
             sessionRegistry(SessionRegistryImpl)
-        }
-    }
-
-    /**
-     * Do a sanity check to ensure that the required hazelcast instance exists.
-     */
-    void doWithApplicationContext() {
-        if (isPluginEnabled() && !Hazelcast.getHazelcastInstanceByName(HazelcastSessionFilter.HAZELCAST_INSTANCE_NAME)) {
-            throw new IllegalStateException("no Hazelcast instance with name 'hazelcastSessionInstance' found")
         }
     }
 
@@ -124,30 +109,21 @@ class HazelcastSessionGrailsPlugin extends Plugin {
     }
 
     /**
+     * Returns the name of the Hazelcast instance to use.
+     *
+     * @return
+     */
+    String getInstanceName() {
+        return getConfigurationValue(String, getPluginConfiguration().instanceName)
+    }
+
+    /**
      * Returns whether the session is configured  as sticky by the load balancer.
      *
      * @return
      */
     Boolean isSessionSticky() {
         return getConfigurationValue(Boolean, getPluginConfiguration().sticky)
-    }
-
-    /**
-     * Returns the name of the cookie to use for hazelcast sessions.
-     *
-     * @return
-     */
-    String getCookieName() {
-        return getConfigurationValue(String, getPluginConfiguration().cookie.name)
-    }
-
-    /**
-     * Returns the domain of the cookie to use for hazelcast sessions.
-     *
-     * @return
-     */
-    String getCookieDomain() {
-        return getConfigurationValue(String, getPluginConfiguration().cookie.domain)
     }
 
     /**
@@ -171,27 +147,23 @@ class HazelcastSessionGrailsPlugin extends Plugin {
      *
      * @return
      */
-    Map getFilterInitParams() {
-        Map params = [
-            'instance-name': HazelcastSessionFilter.HAZELCAST_INSTANCE_NAME
-        ]
+    Properties getFilterInitParams() {
+        Properties properties = new Properties()
+
+        properties.setProperty('map-name', "${Metadata.current.getApplicationName()}-sessions")
+
+        if (getInstanceName()) {
+            properties.setProperty('instance-name', getInstanceName())
+        }
 
         if (getSessionTTL() != null) {
-            params.put('session-ttl-seconds', getSessionTTL().toString())
+            properties.setProperty('session-ttl-seconds', getSessionTTL().toString())
         }
 
         if (isSessionSticky() != null) {
-            params.put('sticky-session', isSessionSticky().toString())
+            properties.setProperty('sticky-session', isSessionSticky().toString())
         }
 
-        if (getCookieName() != null) {
-            params.put('cookie-name', getCookieName())
-        }
-
-        if (getCookieDomain() != null) {
-            params.put('cookie-domain', getCookieDomain())
-        }
-
-        return params
+        return properties
     }
 }

@@ -12,7 +12,7 @@ buildscript {
     }
 }
 
-version "3.0.0"
+version "3.0.1"
 group "org.grails.plugins"
 
 apply plugin: "eclipse"
@@ -61,41 +61,11 @@ dependencies {
 
     compile 'com.hazelcast:hazelcast:3.6.3'
     compile 'com.hazelcast:hazelcast-wm:3.6.3'
+    compile 'org.grails.plugins:hazelcast:1.0.1'
 
     compile "org.springframework.security:spring-security-web:4.1.0.RELEASE", {
         exclude module: 'spring-web'
     }
-    /*
-    compile "org.springframework.security:spring-security-web:3.2.9.RELEASE", {
-        exclude module: 'aopalliance'
-        exclude module: 'commons-codec'
-        exclude module: 'commons-logging'
-        exclude module: 'fest-assert'
-        exclude module: 'groovy'
-        exclude module: 'hsqldb'
-        exclude module: 'jcl-over-slf4j'
-        exclude module: 'junit'
-        exclude module: 'logback-classic'
-        exclude module: 'mockito-core'
-        exclude module: 'powermock-api-mockito'
-        exclude module: 'powermock-api-support'
-        exclude module: 'powermock-core'
-        exclude module: 'powermock-module-junit4'
-        exclude module: 'powermock-module-junit4-common'
-        exclude module: 'powermock-reflect'
-        exclude module: 'spock-core'
-        exclude module: 'spring-beans'
-        exclude module: 'spring-context'
-        exclude module: 'spring-core'
-        exclude module: 'spring-expression'
-        exclude module: 'spring-jdbc'
-        exclude module: 'spring-test'
-        exclude module: 'spring-tx'
-        exclude module: 'spring-web'
-        exclude module: 'spring-webmvc'
-        exclude module: 'tomcat-servlet-api'
-    }
-    */
 }
 
 /*
