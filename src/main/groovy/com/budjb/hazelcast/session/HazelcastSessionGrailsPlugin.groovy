@@ -1,7 +1,7 @@
 package com.budjb.hazelcast.session
 
 import com.hazelcast.web.SessionListener
-import com.hazelcast.web.WebFilter
+import com.hazelcast.web.spring.SpringAwareWebFilter
 import grails.plugins.Plugin
 import grails.util.Metadata
 import org.springframework.boot.context.embedded.FilterRegistrationBean
@@ -71,7 +71,7 @@ class HazelcastSessionGrailsPlugin extends Plugin {
                 listener = new SessionListener()
             }
 
-            hazelcastSessionFilterRegistrationBean(FilterRegistrationBean, new WebFilter(getFilterInitParams()), []) {
+            hazelcastSessionFilterRegistrationBean(FilterRegistrationBean, new SpringAwareWebFilter(getFilterInitParams()), []) {
                 name = 'hazelcast-session-filter'
                 urlPatterns = ['/*']
                 dispatcherTypes = EnumSet.of(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.REQUEST)
