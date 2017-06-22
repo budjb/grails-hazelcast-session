@@ -1,12 +1,12 @@
 package com.budjb.hazelcast.session
 
 import com.hazelcast.web.SessionListener
-import com.hazelcast.web.spring.SpringAwareWebFilter
+import com.hazelcast.web.WebFilter
 import grails.plugins.Plugin
 import grails.util.Metadata
 import org.springframework.boot.context.embedded.FilterRegistrationBean
 import org.springframework.boot.context.embedded.ServletListenerRegistrationBean
-import org.springframework.security.core.session.SessionRegistryImpl
+import org.springframework.core.Ordered
 
 import javax.servlet.DispatcherType
 
@@ -19,7 +19,7 @@ class HazelcastSessionGrailsPlugin extends Plugin {
     /**
      * Load order.
      */
-    def loadAfter = ['spring-security-core', 'logging']
+    def loadAfter = ['spring-security-core', 'logging', 'hazelcast']
 
     /**
      * Plugin author.
@@ -67,17 +67,18 @@ class HazelcastSessionGrailsPlugin extends Plugin {
                 return
             }
 
-            hazelcastSessionListener(ServletListenerRegistrationBean) {
-                listener = new SessionListener()
-            }
-
-            hazelcastSessionFilterRegistrationBean(FilterRegistrationBean, new SpringAwareWebFilter(getFilterInitParams()), []) {
+            hazelcastWebFilter(FilterRegistrationBean) {
                 name = 'hazelcast-session-filter'
-                urlPatterns = ['/*']
+                filter = bean(WebFilterFactoryBean) {
+                    filterProperties = getFilterInitParams()
+                }
+                urlPatterns = ["/*"]
                 dispatcherTypes = EnumSet.of(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.REQUEST)
+                order = Ordered.HIGHEST_PRECEDENCE
             }
 
-            sessionRegistry(SessionRegistryImpl)
+
+            hazelcastSessionListener(ServletListenerRegistrationBean, new SessionListener())
         }
     }
 

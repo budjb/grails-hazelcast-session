@@ -12,7 +12,7 @@ buildscript {
     }
 }
 
-version "3.0.2"
+version "3.0.3"
 group "org.grails.plugins"
 
 apply plugin: "eclipse"
@@ -30,6 +30,7 @@ ext {
 
 repositories {
     mavenLocal()
+    mavenCentral()
     maven { url "https://repo.grails.org/grails/core" }
 }
 
@@ -59,13 +60,8 @@ dependencies {
     testRuntime "org.seleniumhq.selenium:selenium-htmlunit-driver:2.47.1"
     testRuntime "net.sourceforge.htmlunit:htmlunit:2.18"
 
-    compile 'com.hazelcast:hazelcast:3.6.3'
-    compile 'com.hazelcast:hazelcast-wm:3.6.3'
-    compile 'org.grails.plugins:hazelcast:1.0.1'
-
-    compile "org.springframework.security:spring-security-web:4.1.0.RELEASE", {
-        exclude module: 'spring-web'
-    }
+    compile 'com.hazelcast:hazelcast-wm:3.8.1'
+    compile 'org.grails.plugins:hazelcast:1.0.3'
 }
 
 /*
