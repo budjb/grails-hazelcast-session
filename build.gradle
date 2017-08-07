@@ -12,7 +12,7 @@ buildscript {
     }
 }
 
-version "3.0.4"
+version "3.0.5"
 group "org.grails.plugins"
 
 apply plugin: "eclipse"
@@ -61,7 +61,7 @@ dependencies {
     testRuntime "net.sourceforge.htmlunit:htmlunit:2.18"
 
     compile 'com.hazelcast:hazelcast-wm:3.8.1'
-    compile 'org.grails.plugins:hazelcast:1.0.3'
+    compile 'org.grails.plugins:hazelcast:1.0.4'
 }
 
 /*
